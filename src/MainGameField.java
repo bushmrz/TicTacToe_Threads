@@ -23,6 +23,10 @@ public class MainGameField extends JPanel {
 
     Player player1;
     Player player2;
+
+    private final Object playerOneLock = new Object();
+    private final Object playerTwoLock = new Object();
+
     int gameMode = 1;
     // Уровень AI
     int aiLevel = 2;
@@ -73,41 +77,34 @@ public class MainGameField extends JPanel {
 
                 if (!gameOver) {
                     if (gameMode == 1) {
-                        modeAgainstAI();
+                        // Старт нового потока для каждого игрока
+                        new Thread(() -> modeAgainstAI(player1, playerOneLock)).start();
+                        new Thread(() -> modeAgainstAI(player2, playerTwoLock)).start();
                     }
                 }
             }
         });
     }
 
-    void modeAgainstAI() {
-        AI player_one = new AI("X", aiLevel, "X" );
-        AI player_two = new AI("O", aiLevel, player_one.sign);
-        if (!gameOver) {
-            if (player_one.shot(x, y)) {
-                if (player_one.win()) {
-                    System.out.println("Игрок 1 выиграл!!!");
-                    gameOver = true;
-                    gameOverMessage = "Игрок 1 выиграл!!!";
-                }
-                if (isFieldFull()) {
-                    gameOver = true;
-                    gameOverMessage = "Ничья!!!";
-                }
-                repaint();
-                if (!gameOver) {
-                    player_two.shot(x, y);
-                }
-                if (player_two.win()) {
-                    System.out.println("Игрок 2 выиграл!!!");
-                    gameOver = true;
-                    gameOverMessage = "Игрок 2 выиграл!!!";
+    void modeAgainstAI(Player player, Object lock) {
+        synchronized (lock) {
+            AI aiPlayer = new AI(player.getSign(), aiLevel, player.getSign());
+
+            if (!gameOver) {
+                if (aiPlayer.shot(x, y)) {
+                    if (aiPlayer.win()) {
+                        System.out.println("Игрок " + player.getSign() + " выиграл в потоке " + Thread.currentThread().getName() + "(+1) !!!");
+                        gameOver = true;
+                        gameOverMessage = "Игрок " + player.getSign() + " выиграл!!!";
+                        repaint();
+                    }
+                    if (isFieldFull()) {
+                        gameOver = true;
+                        gameOverMessage = "Ничья!!!";
+                        repaint();
+                    }
                 }
                 repaint();
-                if (isFieldFull() && !player_two.win()) {
-                    gameOver = true;
-                    gameOverMessage = "Ничья!!!";
-                }
             }
         }
     }

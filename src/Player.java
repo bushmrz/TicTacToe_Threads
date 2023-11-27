@@ -25,4 +25,8 @@ public class Player extends AGamer {
         gameField = MainGameField.getInstance();
         return gameField.checkWin(this.sign);
     }
+
+    public String getSign() {
+        return sign;
+    }
 }
